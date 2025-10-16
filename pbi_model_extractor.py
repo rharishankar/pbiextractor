@@ -27,6 +27,23 @@ class PowerBIAnalyzer:
         # Create output directory
         os.makedirs(output_dir, exist_ok=True)
     
+    # ========== FIX: ADD THIS NEW METHOD ==========
+    def _safe_get_expression(self, obj, key='expression'):
+        """Safely get expression - handle both string and list."""
+        expr = obj.get(key, '')
+        
+        # Handle different expression formats
+        if isinstance(expr, list):
+            # If it's a list, join with newlines
+            return '\n'.join(str(item) for item in expr)
+        elif isinstance(expr, str):
+            return expr
+        elif expr is None:
+            return ''
+        else:
+            return str(expr)
+    # ==============================================
+    
     def load_data(self):
         """Load the JSON file."""
         print("=" * 80)
@@ -71,8 +88,9 @@ class PowerBIAnalyzer:
         print(f"\nAll output files are in: {self.output_dir}/")
         print("\nGenerated files:")
         for file in os.listdir(self.output_dir):
-            size = os.path.getsize(os.path.join(self.output_dir, file))
-            print(f"   • {file} ({size:,} bytes)")
+            if os.path.isfile(os.path.join(self.output_dir, file)):
+                size = os.path.getsize(os.path.join(self.output_dir, file))
+                print(f"   • {file} ({size:,} bytes)")
     
     def create_data_dictionary(self):
         """Generate Excel data dictionary."""
@@ -111,6 +129,7 @@ class PowerBIAnalyzer:
         print("📋 Processing Columns...")
         for table in self.data['dataModel'].get('tables', []):
             for col in table.get('columns', []):
+                # ========== FIX: USE SAFE EXPRESSION GETTER ==========
                 columns_list.append({
                     'Table': table['name'],
                     'Column Name': col['name'],
@@ -120,27 +139,30 @@ class PowerBIAnalyzer:
                     'Is Hidden': 'Yes' if col.get('isHidden', False) else 'No',
                     'Is Key': 'Yes' if col.get('isKey', False) else 'No',
                     'Is Calculated': 'Yes' if col.get('expression') else 'No',
-                    'DAX Expression': col.get('expression', ''),
+                    'DAX Expression': self._safe_get_expression(col, 'expression'),
                     'Description': col.get('description', ''),
                     'Data Category': col.get('dataCategory', ''),
                     'Summarize By': col.get('summarizeBy', 'default'),
                     'Sort By Column': col.get('sortByColumn', ''),
                     'Display Folder': col.get('displayFolder', '')
                 })
+                # =====================================================
         
         # Process Measures
         print("📈 Processing Measures...")
         for table in self.data['dataModel'].get('tables', []):
             for measure in table.get('measures', []):
+                # ========== FIX: USE SAFE EXPRESSION GETTER ==========
                 measures_list.append({
                     'Table': table['name'],
                     'Measure Name': measure['name'],
                     'Display Folder': measure.get('displayFolder', ''),
                     'Format String': measure.get('formatString', ''),
                     'Is Hidden': 'Yes' if measure.get('isHidden', False) else 'No',
-                    'DAX Expression': measure.get('expression', ''),
+                    'DAX Expression': self._safe_get_expression(measure, 'expression'),
                     'Description': measure.get('description', '')
                 })
+                # =====================================================
         
         # Process Relationships
         print("🔗 Processing Relationships...")
@@ -176,12 +198,14 @@ class PowerBIAnalyzer:
         print("🔒 Processing Security Roles...")
         for role in self.data['dataModel'].get('roles', []):
             for perm in role.get('tablePermissions', []):
+                # ========== FIX: USE SAFE EXPRESSION GETTER ==========
                 roles_list.append({
                     'Role Name': role['name'],
                     'Role Description': role.get('description', ''),
                     'Table': perm['name'],
-                    'Filter Expression': perm.get('filterExpression', '')
+                    'Filter Expression': self._safe_get_expression(perm, 'filterExpression')
                 })
+                # =====================================================
         
         # Summary
         summary_data = []
@@ -513,8 +537,11 @@ class PowerBIAnalyzer:
                         if col.get('description'):
                             html += f'<div class="item-detail">{col["description"]}</div>'
                         
-                        if col.get('expression'):
-                            html += f'<div class="dax">{col["expression"]}</div>'
+                        # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                        expr = self._safe_get_expression(col, 'expression')
+                        if expr:
+                            html += f'<div class="dax">{expr}</div>'
+                        # =====================================================
                         
                         html += '</div>'
                     html += '</div>'
@@ -540,8 +567,11 @@ class PowerBIAnalyzer:
                         if measure.get('description'):
                             html += f'<div class="item-detail">{measure["description"]}</div>'
                         
-                        if measure.get('expression'):
-                            html += f'<div class="dax">{measure["expression"]}</div>'
+                        # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                        expr = self._safe_get_expression(measure, 'expression')
+                        if expr:
+                            html += f'<div class="dax">{expr}</div>'
+                        # =====================================================
                         
                         html += '</div>'
                     html += '</div>'
@@ -593,8 +623,13 @@ class PowerBIAnalyzer:
                         for perm in role['tablePermissions']:
                             html += '<div class="item">'
                             html += f'<div class="item-name">Table: {perm["name"]}</div>'
-                            if perm.get('filterExpression'):
-                                html += f'<div class="dax">{perm["filterExpression"]}</div>'
+                            
+                            # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                            expr = self._safe_get_expression(perm, 'filterExpression')
+                            if expr:
+                                html += f'<div class="dax">{expr}</div>'
+                            # =====================================================
+                            
                             html += '</div>'
                         html += '</div>'
                     html += '</div>'
@@ -637,11 +672,13 @@ class PowerBIAnalyzer:
             all_columns[table_name] = [col['name'] for col in table.get('columns', [])]
             
             for measure in table.get('measures', []):
+                # ========== FIX: USE SAFE EXPRESSION GETTER ==========
                 all_measures[measure['name']] = {
                     'table': table_name,
-                    'expression': measure.get('expression', ''),
+                    'expression': self._safe_get_expression(measure, 'expression'),
                     'displayFolder': measure.get('displayFolder', '')
                 }
+                # =====================================================
         
         print(f"📊 Analyzing {len(all_measures)} measures...")
         
@@ -895,7 +932,12 @@ class PowerBIAnalyzer:
                             f.write(f"-- Format: {measure['formatString']}\n")
                         if measure.get('description'):
                             f.write(f"-- Description: {measure['description']}\n")
-                        f.write(f"\n{measure.get('expression', 'N/A')}\n")
+                        
+                        # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                        expr = self._safe_get_expression(measure, 'expression')
+                        f.write(f"\n{expr}\n")
+                        # =====================================================
+                        
                         f.write("\n" + "-" * 80 + "\n\n")
         
         print(f"✅ All measures exported: {all_measures_file}")
@@ -927,7 +969,12 @@ class PowerBIAnalyzer:
                             f.write(f"-- Format: {col['formatString']}\n")
                         if col.get('description'):
                             f.write(f"-- Description: {col['description']}\n")
-                        f.write(f"\n{col.get('expression', 'N/A')}\n")
+                        
+                        # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                        expr = self._safe_get_expression(col, 'expression')
+                        f.write(f"\n{expr}\n")
+                        # =====================================================
+                        
                         f.write("\n" + "-" * 80 + "\n\n")
         
         print(f"✅ Calculated columns exported: {calc_cols_file}")
@@ -961,7 +1008,12 @@ class PowerBIAnalyzer:
                     f.write(f"[{item['table']}].[{measure['name']}]\n")
                     if measure.get('formatString'):
                         f.write(f"Format: {measure['formatString']}\n")
-                    f.write(f"\n{measure.get('expression', 'N/A')}\n")
+                    
+                    # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                    expr = self._safe_get_expression(measure, 'expression')
+                    f.write(f"\n{expr}\n")
+                    # =====================================================
+                    
                     f.write("\n" + "-" * 80 + "\n\n")
         
         print(f"   📁 Created {folder_count} folder files in: {dax_dir}/")

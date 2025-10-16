@@ -13,6 +13,23 @@ class PBIXParser:
         self.output_dir = output_dir
         self.extract_dir = os.path.join(output_dir, 'extracted')
         self.results = {}
+    
+    # ========== ADD THIS NEW METHOD ==========
+    def _safe_get_expression(self, obj, key='expression'):
+        """Safely get expression - handle both string and list."""
+        expr = obj.get(key, '')
+        
+        # Handle different expression formats
+        if isinstance(expr, list):
+            # If it's a list, join with newlines
+            return '\n'.join(str(item) for item in expr)
+        elif isinstance(expr, str):
+            return expr
+        elif expr is None:
+            return ''
+        else:
+            return str(expr)
+    # ==============================================
         
     def parse(self):
         """Main parsing function - extracts everything possible."""
@@ -749,10 +766,14 @@ class PBIXParser:
                             f.write(f"  • {measure['name']}{hidden_meas}\n")
                             if measure.get('displayFolder'):
                                 f.write(f"    Folder: {measure['displayFolder']}\n")
-                            if measure.get('expression'):
-                                # Format DAX expression
-                                expr = measure['expression'].replace('\n', '\n    ')
+                            
+                            # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                            expr = self._safe_get_expression(measure, 'expression')
+                            if expr:
+                                expr = expr.replace('\n', '\n    ')
                                 f.write(f"    DAX: {expr}\n")
+                            # =====================================================
+                            
                             if measure.get('formatString'):
                                 f.write(f"    Format: {measure['formatString']}\n")
                     
@@ -790,9 +811,13 @@ class PBIXParser:
                         f.write(f"Permissions:\n")
                         for perm in role.get('tablePermissions', []):
                             f.write(f"  • Table: {perm['name']}\n")
-                            if perm.get('filterExpression'):
-                                expr = perm['filterExpression'].replace('\n', '\n    ')
+                            
+                            # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                            expr = self._safe_get_expression(perm, 'filterExpression')
+                            if expr:
+                                expr = expr.replace('\n', '\n    ')
                                 f.write(f"    Filter: {expr}\n")
+                            # =====================================================
                         f.write("\n")
             
             # CONNECTIONS
@@ -840,10 +865,13 @@ class PBIXParser:
                 
                 for measure in by_folder[folder]:
                     f.write(f"\n{measure['table']}[{measure['measure']}]\n")
-                    if measure.get('expression'):
-                        # Format DAX
-                        expr = measure['expression'].strip()
+                    
+                    # ========== FIX: USE SAFE EXPRESSION GETTER ==========
+                    expr = self._safe_get_expression(measure, 'expression')
+                    if expr:
+                        expr = expr.strip()
                         f.write(f"{expr}\n")
+                    # =====================================================
                     f.write("\n")
         
         print(f"💾 Saved measures report: {output_file}")
@@ -931,13 +959,13 @@ if __name__ == '__main__':
         pbix_file = sys.argv[1]
     else:
         # Default file name - change this to your PBIX/PBIT file
-        pbix_file = 'your_report.pbix'
+        pbix_file = 'your_report.pbit'
     
     # Check if file exists
     if not os.path.exists(pbix_file):
         print(f"❌ Error: File not found: {pbix_file}")
-        print(f"\nUsage: python {sys.argv[0]} <path_to_pbix_file>")
-        print(f"   Or: Edit the script and change 'your_report.pbix' to your file name")
+        print(f"\nUsage: python {sys.argv[0]} <path_to_pbix_or_pbit_file>")
+        print(f"   Or: Edit the script and change 'your_report.pbit' to your file name")
         sys.exit(1)
     
     # Parse the file
