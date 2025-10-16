@@ -426,34 +426,34 @@ class PBIXParser:
             print("   Continuing without connections data\n")
     
     
-    def _parse_connections(self):
-        """Parse Connections - data sources."""
-        print("🔌 Parsing Data Connections...")
-        try:
-            connections_path = os.path.join(self.extract_dir, 'Connections')
-            if not os.path.exists(connections_path):
-                print("   ⚠ Connections file not found\n")
-                return
+    # def _parse_connections(self):
+    #     """Parse Connections - data sources."""
+    #     print("🔌 Parsing Data Connections...")
+    #     try:
+    #         connections_path = os.path.join(self.extract_dir, 'Connections')
+    #         if not os.path.exists(connections_path):
+    #             print("   ⚠ Connections file not found\n")
+    #             return
             
-            with open(connections_path, 'r', encoding='utf-16-le') as f:
-                connections = json.load(f)
+    #         with open(connections_path, 'r', encoding='utf-16-le') as f:
+    #             connections = json.load(f)
             
-            self.results['connections'] = []
-            for conn in connections.get('Connections', []):
-                conn_info = {
-                    'name': conn.get('Name'),
-                    'connectionString': conn.get('ConnectionString'),
-                    'connectionType': conn.get('ConnectionType'),
-                    'impersonationMode': conn.get('ImpersonationMode'),
-                    'privacy': conn.get('Privacy'),
-                    'annotations': conn.get('Annotations', [])
-                }
-                self.results['connections'].append(conn_info)
+    #         self.results['connections'] = []
+    #         for conn in connections.get('Connections', []):
+    #             conn_info = {
+    #                 'name': conn.get('Name'),
+    #                 'connectionString': conn.get('ConnectionString'),
+    #                 'connectionType': conn.get('ConnectionType'),
+    #                 'impersonationMode': conn.get('ImpersonationMode'),
+    #                 'privacy': conn.get('Privacy'),
+    #                 'annotations': conn.get('Annotations', [])
+    #             }
+    #             self.results['connections'].append(conn_info)
             
-            print(f"   ✓ Found {len(self.results['connections'])} data source connections\n")
+    #         print(f"   ✓ Found {len(self.results['connections'])} data source connections\n")
             
-        except Exception as e:
-            print(f"   ✗ Error parsing connections: {e}\n")
+    #     except Exception as e:
+    #         print(f"   ✗ Error parsing connections: {e}\n")
     
     def _parse_metadata(self):
         """Parse Metadata."""
