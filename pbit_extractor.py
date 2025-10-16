@@ -381,51 +381,79 @@ class PBIXParser:
             print(f"   ✗ Error parsing data model: {e}\n")
     
     def _parse_connections(self):
-    """Parse Connections - data sources."""
-    print("🔌 Parsing Data Connections...")
-    try:
-        connections_path = os.path.join(self.extract_dir, 'Connections')
-        if not os.path.exists(connections_path):
-            print("   ⚠ Connections file not found\n")
-            return
-        
-        # Try different encodings
-        connections = None
-        encodings_to_try = ['utf-16-le', 'utf-8', 'utf-16', 'utf-16-be']
-        
-        for encoding in encodings_to_try:
-            try:
-                with open(connections_path, 'r', encoding=encoding) as f:
-                    connections = json.load(f)
-                print(f"   ✓ Successfully read with {encoding} encoding")
-                break
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                continue
-        
-        if connections is None:
-            print("   ⚠ Could not read Connections file with any known encoding")
-            print("   Skipping connections parsing\n")
-            return
-        
-        self.results['connections'] = []
-        for conn in connections.get('Connections', []):
-            conn_info = {
-                'name': conn.get('Name'),
-                'connectionString': conn.get('ConnectionString'),
-                'connectionType': conn.get('ConnectionType'),
-                'impersonationMode': conn.get('ImpersonationMode'),
-                'privacy': conn.get('Privacy'),
-                'annotations': conn.get('Annotations', [])
-            }
-            self.results['connections'].append(conn_info)
-        
-        print(f"   ✓ Found {len(self.results['connections'])} data source connections\n")
-        
-    except Exception as e:
-        print(f"   ⚠ Error parsing connections: {e}")
-        print("   Continuing without connections data\n")
+        """Parse Connections - data sources."""
+        print("🔌 Parsing Data Connections...")
+        try:
+            connections_path = os.path.join(self.extract_dir, 'Connections')
+            if not os.path.exists(connections_path):
+                print("   ⚠ Connections file not found\n")
+                return
+            
+            # Try different encodings
+            connections = None
+            encodings_to_try = ['utf-16-le', 'utf-8', 'utf-16', 'utf-16-be']
+            
+            for encoding in encodings_to_try:
+                try:
+                    with open(connections_path, 'r', encoding=encoding) as f:
+                        connections = json.load(f)
+                    print(f"   ✓ Successfully read with {encoding} encoding")
+                    break
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    continue
+            
+            if connections is None:
+                print("   ⚠ Could not read Connections file with any known encoding")
+                print("   Skipping connections parsing\n")
+                return
+            
+            self.results['connections'] = []
+            for conn in connections.get('Connections', []):
+                conn_info = {
+                    'name': conn.get('Name'),
+                    'connectionString': conn.get('ConnectionString'),
+                    'connectionType': conn.get('ConnectionType'),
+                    'impersonationMode': conn.get('ImpersonationMode'),
+                    'privacy': conn.get('Privacy'),
+                    'annotations': conn.get('Annotations', [])
+                }
+                self.results['connections'].append(conn_info)
+            
+            print(f"   ✓ Found {len(self.results['connections'])} data source connections\n")
+            
+        except Exception as e:
+            print(f"   ⚠ Error parsing connections: {e}")
+            print("   Continuing without connections data\n")
     
-      
+    
+    def _parse_connections(self):
+        """Parse Connections - data sources."""
+        print("🔌 Parsing Data Connections...")
+        try:
+            connections_path = os.path.join(self.extract_dir, 'Connections')
+            if not os.path.exists(connections_path):
+                print("   ⚠ Connections file not found\n")
+                return
+            
+            with open(connections_path, 'r', encoding='utf-16-le') as f:
+                connections = json.load(f)
+            
+            self.results['connections'] = []
+            for conn in connections.get('Connections', []):
+                conn_info = {
+                    'name': conn.get('Name'),
+                    'connectionString': conn.get('ConnectionString'),
+                    'connectionType': conn.get('ConnectionType'),
+                    'impersonationMode': conn.get('ImpersonationMode'),
+                    'privacy': conn.get('Privacy'),
+                    'annotations': conn.get('Annotations', [])
+                }
+                self.results['connections'].append(conn_info)
+            
+            print(f"   ✓ Found {len(self.results['connections'])} data source connections\n")
+            
+        except Exception as e:
+            print(f"   ✗ Error parsing connections: {e}\n")
     
     def _parse_metadata(self):
         """Parse Metadata."""
